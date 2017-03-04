@@ -28,6 +28,7 @@ void setup() {
   //pinMode(interruptPin, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(interruptPin), blink, RISING);
   Serial1.begin(9600);
+  Serial2.begin(9600);
 }
 
 void loop(){
@@ -65,33 +66,62 @@ void loop(){
 
   // Spočítá vzdálenost float
   float distance = pulseIn(ECHOPIN, HIGH);
-  distance= distance*0.017315f;
-  // odešle informace na sérivý port
+  //distance= distance*0.017315f;
   Serial.print(distance); 
-  Serial.println("cm\n");
-  //počká 1 sekundu
+  //Serial.println("cm\n");
   delay(1000);
 
   if (state == 1) {
-    Serial.println("Odesilam data do Sigfoxu"); 
-    Serial.println("AT$I=10");
+    Serial.println("Odesilam data do Sigfoxu");
+    //Identify your self
+    Serial2.print("AT$I=10\r\n");
+    String identify = Serial2.readString();
+    Serial.println("Identification done:" + identify);
     delay(1000);
-
+    
+    //Define variables
     char dist[12];
     char latitude[12];
     char longitude[12];
     dtostrf(flat, 9, 5, latitude);
     dtostrf(flon, 9, 5, longitude);
-    //dtostrf(distance, 6, 2, dist);
-    
-    Serial.print("AT$SF=");
-    Serial.println(latitude);
+    dtostrf(distance, 9, 0, dist);
+    Serial.println("Variables defined...");
+
+    //Process latitude
+    Serial2.print("AT$SF=");
+    for(int i = 1; i < 9; i++){
+      if(latitude[i] != '.')
+        Serial2.print(latitude[i]);
+    }
+    Serial2.print('0');
+    Serial2.print("\r\n");
+    Serial.println("Latitude sent...");
     delay(1000);
-    Serial.print("AT$SF=");
-    Serial.println(longitude);
-    //delay(1000);
-    //Serial.print("AT$SF=");
-    //Serial.println(distance);
+    
+    //Process longitude
+    Serial2.print("AT$SF=");
+    for(int i = 1; i < 9; i++){
+      if(longitude[i] != '.')
+        Serial2.print(longitude[i]);
+    }
+    Serial2.print('0');
+    Serial2.print("\r\n");
+    Serial.println("Longitude sent...");
+    delay(1000);
+
+    //Process distance
+    Serial2.print("AT$SF=");
+    for(int i = 1; i < 9; i++){
+      if(dist[i] != ' ')
+        Serial2.print(dist[i]);
+      else
+        Serial2.print('0');
+    }
+    Serial2.print("\r\n");
+    Serial.println("Distance sent...");
+    delay(1000);
+    
     state = 0;
     delay(200);
   }
